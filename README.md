@@ -113,7 +113,7 @@ npm run type-check
 npm run build-only
 ```
 
-## Créditos
+# Créditos
 
 Os dados e imagens do catálogo são fornecidos pelo [The Movie Database (TMDB)](https://www.themoviedb.org/). Este projeto não é endossado nem certificado pelo TMDB.
 
