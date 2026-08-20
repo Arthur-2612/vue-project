@@ -4,7 +4,7 @@
 
 Catálogo editorial de filmes construído com Vue 3. O Cinevault combina descoberta visual, busca rápida e uma lista pessoal em uma experiência inspirada em revistas de cinema.
 
-**Versão atual:** `1.2.1`
+**Versão atual:** `1.1.2`
 
 ![Cinevault](https://img.shields.io/badge/Cinevault-Vue%203-42b883?style=for-the-badge&logo=vue.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
@@ -119,7 +119,11 @@ npm run build-only
 
 ## Changelog
 
-### `1.2.1`
+### `1.1.2`
+
+- Release específica do Cinevault com o catálogo, favoritos persistentes, trailers e integração TMDB disponíveis.
+
+### `1.1.1`
 
 - Adiciona o botão **Carregar mais filmes** quando a TMDB está conectada.
 - Mantém os filmes já carregados e remove duplicados entre páginas.
