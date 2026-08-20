@@ -12,6 +12,7 @@ const selectedMovie = ref<Movie | null>(null)
 const favorites = ref<number[]>([])
 const isLoading = ref(false)
 const usingApi = ref(false)
+const favoritesStorageKey = 'cinevault:favorites'
 
 const movies = ref<Movie[]>([
   { id: 872585, title: 'Oppenheimer', year: '2023', rating: 8.1, genres: ['Drama', 'História'], duration: '3h 01min', poster: 'https://image.tmdb.org/t/p/w780/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg', backdrop: 'https://image.tmdb.org/t/p/w1280/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg', overview: 'A história do físico americano J. Robert Oppenheimer e seu papel no desenvolvimento da bomba atômica.', featured: true },
@@ -31,7 +32,10 @@ const filteredMovies = computed(() => {
   if (sortBy.value === 'Mais recentes') result = [...result].sort((a, b) => Number(b.year) - Number(a.year))
   return result
 })
-function toggleFavorite(id: number) { favorites.value = favorites.value.includes(id) ? favorites.value.filter((favorite) => favorite !== id) : [...favorites.value, id] }
+function toggleFavorite(id: number) {
+  favorites.value = favorites.value.includes(id) ? favorites.value.filter((favorite) => favorite !== id) : [...favorites.value, id]
+  localStorage.setItem(favoritesStorageKey, JSON.stringify(favorites.value))
+}
 function isFavorite(id: number) { return favorites.value.includes(id) }
 function clearSearch() { search.value = ''; activeGenre.value = 'Todos' }
 function openTrailer(movie: Movie) {
@@ -53,7 +57,17 @@ async function fetchMovies() {
     usingApi.value = true
   } catch (error) { console.warn('Catálogo local exibido:', error) } finally { isLoading.value = false }
 }
-onMounted(fetchMovies)
+onMounted(() => {
+  const savedFavorites = localStorage.getItem(favoritesStorageKey)
+  if (savedFavorites) {
+    try {
+      favorites.value = JSON.parse(savedFavorites) as number[]
+    } catch {
+      localStorage.removeItem(favoritesStorageKey)
+    }
+  }
+  fetchMovies()
+})
 </script>
 
 <template>

@@ -4,6 +4,8 @@
 
 Catálogo editorial de filmes construído com Vue 3. O Cinevault combina descoberta visual, busca rápida e uma lista pessoal em uma experiência inspirada em revistas de cinema.
 
+**Versão atual:** `1.0.1`
+
 ![Cinevault](https://img.shields.io/badge/Cinevault-Vue%203-42b883?style=for-the-badge&logo=vue.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![TMDB](https://img.shields.io/badge/dados-TMDB-01b4e4?style=for-the-badge&logo=tmdb&logoColor=white)
@@ -25,6 +27,7 @@ O projeto funciona em dois modos:
 - Filtros por gênero
 - Ordenação por relevância, avaliação e data
 - Favoritos com a seção **Minha lista**
+- Favoritos persistentes no navegador com `localStorage`
 - Modal com sinopse e detalhes do filme
 - Trailers oficiais pesquisados no YouTube
 - Fallback automático para imagens indisponíveis
@@ -112,6 +115,13 @@ Antes de publicar uma alteração, execute:
 npm run type-check
 npm run build-only
 ```
+
+## Changelog
+
+### `1.0.1`
+
+- Mantém os filmes favoritos após recarregar ou reabrir o site.
+- Restaura automaticamente a seção **Minha lista** usando o armazenamento local do navegador.
 
 # Créditos
 
