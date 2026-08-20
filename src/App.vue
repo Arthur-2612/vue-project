@@ -11,7 +11,9 @@ const activeTab = ref('explorar')
 const selectedMovie = ref<Movie | null>(null)
 const favorites = ref<number[]>([])
 const isLoading = ref(false)
+const isLoadingMore = ref(false)
 const usingApi = ref(false)
+const apiPage = ref(1)
 const favoritesStorageKey = 'cinevault:favorites'
 
 const movies = ref<Movie[]>([
@@ -46,16 +48,25 @@ function handleImageError(event: Event) {
   const image = event.target as HTMLImageElement
   image.src = 'https://image.tmdb.org/t/p/w780/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg'
 }
-async function fetchMovies() {
+function mapApiMovies(results: Record<string, unknown>[]): Movie[] {
+  return results.filter((item) => item.poster_path).map((item) => ({ id: item.id as number, title: item.title as string, year: String(item.release_date).slice(0, 4), rating: Number((item.vote_average as number).toFixed(1)), genres: ['Cinema'], duration: '—', poster: `${imageBase}${item.poster_path}`, backdrop: `${imageBase}${item.backdrop_path ?? item.poster_path}`, overview: (item.overview as string) || 'Sem sinopse disponível.' }))
+}
+async function fetchMovies(page = 1) {
   if (!apiKey) return
-  isLoading.value = true
+  if (page === 1) isLoading.value = true
+  else isLoadingMore.value = true
   try {
-    const response = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=pt-BR&page=1`)
+    const response = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&language=pt-BR&page=${page}`)
     if (!response.ok) throw new Error('TMDB request failed')
     const data = await response.json()
-    movies.value = data.results.filter((item: Record<string, unknown>) => item.poster_path).map((item: Record<string, unknown>) => ({ id: item.id as number, title: item.title as string, year: String(item.release_date).slice(0, 4), rating: Number((item.vote_average as number).toFixed(1)), genres: ['Cinema'], duration: '—', poster: `${imageBase}${item.poster_path}`, backdrop: `${imageBase}${item.backdrop_path ?? item.poster_path}`, overview: (item.overview as string) || 'Sem sinopse disponível.' }))
+    const nextMovies = mapApiMovies(data.results as Record<string, unknown>[])
+    movies.value = page === 1 ? nextMovies : [...movies.value, ...nextMovies.filter((movie) => !movies.value.some((currentMovie) => currentMovie.id === movie.id))]
+    apiPage.value = page
     usingApi.value = true
-  } catch (error) { console.warn('Catálogo local exibido:', error) } finally { isLoading.value = false }
+  } catch (error) { console.warn('Catálogo local exibido:', error) } finally { isLoading.value = false; isLoadingMore.value = false }
+}
+function loadMoreMovies() {
+  fetchMovies(apiPage.value + 1)
 }
 onMounted(() => {
   const savedFavorites = localStorage.getItem(favoritesStorageKey)
@@ -78,6 +89,7 @@ onMounted(() => {
       <section v-if="activeTab === 'explorar'" class="catalog section-wrap"><div class="section-heading"><div><span class="eyebrow muted">Descubra algo novo</span><h2>Em cartaz agora</h2></div><label class="search-box"><span>⌕</span><input v-model="search" placeholder="Buscar filmes..." /><button v-if="search" @click="search = ''">×</button></label></div><div class="filter-row"><div class="genre-filters"><button v-for="genre in genres" :key="genre" :class="{ selected: activeGenre === genre }" @click="activeGenre = genre">{{ genre }}</button></div><select v-model="sortBy" aria-label="Ordenar filmes"><option>Mais relevantes</option><option>Melhor avaliados</option><option>Mais recentes</option></select></div><div v-if="isLoading" class="status-message">Carregando novidades do cinema...</div><div v-else-if="filteredMovies.length" class="movie-grid"><article v-for="movie in filteredMovies" :key="movie.id" class="movie-card" @click="selectedMovie = movie"><div class="poster-wrap"><img :src="movie.poster" :alt="`Pôster de ${movie.title}`" loading="lazy" @error="handleImageError" /><span class="card-rating">★ {{ movie.rating }}</span><button class="favorite-button" :class="{ saved: isFavorite(movie.id) }" @click.stop="toggleFavorite(movie.id)">{{ isFavorite(movie.id) ? '♥' : '♡' }}</button><div class="play-overlay">▶</div></div><div class="movie-info"><h3>{{ movie.title }}</h3><p>{{ movie.year }} <span>•</span> {{ movie.genres.join(' · ') }}</p></div></article></div><div v-else class="empty-state"><span>⌕</span><h3>Nenhum filme encontrado</h3><p>Tente buscar outro título ou remover os filtros.</p><button class="ghost-button" @click="clearSearch">Limpar filtros</button></div><div class="catalog-footer"><span>{{ filteredMovies.length }} títulos disponíveis</span><span class="api-status"><i :class="{ live: usingApi }"></i>{{ usingApi ? 'Sincronizado com TMDB' : 'Catálogo editorial' }}</span></div></section>
       <section v-else class="section-wrap list-view"><span class="eyebrow muted">Seu cinema pessoal</span><h2>Minha lista</h2><div v-if="favorites.length" class="movie-grid"><article v-for="movie in movies.filter((item) => favorites.includes(item.id))" :key="movie.id" class="movie-card" @click="selectedMovie = movie"><div class="poster-wrap"><img :src="movie.poster" :alt="`Pôster de ${movie.title}`" @error="handleImageError" /><button class="favorite-button saved" @click.stop="toggleFavorite(movie.id)">♥</button></div><div class="movie-info"><h3>{{ movie.title }}</h3><p>{{ movie.year }} <span>•</span> {{ movie.genres.join(' · ') }}</p></div></article></div><div v-else class="empty-state"><span>♡</span><h3>Sua lista está vazia</h3><p>Salve filmes para encontrá-los aqui depois.</p><button class="primary-button" @click="activeTab = 'explorar'">Explorar catálogo</button></div></section>
     </main>
+    <div v-if="activeTab === 'explorar' && usingApi" class="load-more-wrap"><button class="ghost-button load-more-button" :disabled="isLoadingMore" @click="loadMoreMovies">{{ isLoadingMore ? 'Carregando...' : '＋ Carregar mais filmes' }}</button></div>
     <div v-if="selectedMovie" class="modal-backdrop" @click.self="selectedMovie = null"><article class="detail-modal"><button class="modal-close" aria-label="Fechar" @click="selectedMovie = null">×</button><img class="modal-image" :src="selectedMovie.backdrop" :alt="selectedMovie.title" @error="handleImageError" /><div class="modal-content"><span class="eyebrow">Detalhes do filme</span><h2>{{ selectedMovie.title }}</h2><div class="hero-meta"><span class="rating">★ {{ selectedMovie.rating }}</span><span>{{ selectedMovie.year }}</span><span>{{ selectedMovie.duration }}</span></div><p>{{ selectedMovie.overview }}</p><div class="hero-actions"><button class="primary-button" @click="openTrailer(selectedMovie)">▶ Ver trailer no YouTube</button><button class="ghost-button" @click="toggleFavorite(selectedMovie.id)">{{ isFavorite(selectedMovie.id) ? '♥ Remover da lista' : '+ Adicionar à lista' }}</button></div></div></article></div>
   </div>
 </template>
